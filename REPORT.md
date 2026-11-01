@@ -1,7 +1,9 @@
 # Отчёт по кейсу «Balance & Progression Studio»
 **Студент:** Индивидуальный проект  
 **Стек:** Vanilla JavaScript (ES6 Modules), HTML5, CSS3, Chart.js, PapaParse  
-**Формат:** Статическое веб-приложение для балансировки игр (GitHub Pages / локальный запуск)
+**Формат:** Статическое веб-приложение для балансировки игр  
+**Ссылка на сервис (GitHub Pages):** [https://gr1nis.github.io/balance-studio/](https://gr1nis.github.io/balance-studio/)  
+**Репозиторий проекта:** [https://github.com/Gr1nis/balance-studio](https://github.com/Gr1nis/balance-studio)
 
 ---
 

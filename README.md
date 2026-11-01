@@ -1,5 +1,8 @@
 # ⚔️ Balance & Progression Studio
 
+> 🔗 **Живая опубликованная версия сервиса:** **[https://gr1nis.github.io/balance-studio/](https://gr1nis.github.io/balance-studio/)**  
+> 📁 **GitHub Репозиторий проекта:** **[https://github.com/Gr1nis/balance-studio](https://github.com/Gr1nis/balance-studio)**
+
 **Balance & Progression Studio** — интерактивное статическое веб-приложение для геймдизайнеров, предназначенное для настройки, анализа и аудита игрового баланса, расчёта боевых метрик (TTK / DPS), моделирования кривых прокачки и валидации вероятностей лута.
 
 Сервис работает полностью локально без бэкенда и сервера, сохраняет состояние в `localStorage` и разворачивается в один клик на **GitHub Pages**, **Vercel** или **Netlify**.
