@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Balance & Progression Studio — Инструмент геймдизайнера</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- PapaParse CDN for robust CSV handling -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="header">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-icon">⚔️</span>
+        <div>
+          <div class="brand-title">Balance Studio</div>
+          <div class="brand-subtitle">Игровой баланс, TTK & Прогрессия</div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs" id="navTabs" role="tablist">
+        <button class="tab-btn active" data-tab="import" title="Клавиша 1">
+          <span>📥</span> Импорт <span class="badge" id="badgeUnitCount">0</span>
+        </button>
+        <button class="tab-btn" data-tab="table" title="Клавиша 2">
+          <span>📋</span> Таблица
+        </button>
+        <button class="tab-btn" data-tab="ttk" title="Клавиша 3">
+          <span>🎯</span> Урон / TTK
+        </button>
+        <button class="tab-btn" data-tab="progression" title="Клавиша 4">
+          <span>📈</span> Прогрессия
+        </button>
+        <button class="tab-btn" data-tab="loot" title="Клавиша 5">
+          <span>🎲</span> Таблицы лута
+        </button>
+        <button class="tab-btn" data-tab="audit" title="Клавиша 6">
+          <span>⚖️</span> Аудит баланса
+        </button>
+      </nav>
+
+      <!-- Right Header Actions -->
+      <div class="header-actions">
+        <button class="btn btn-outline btn-icon" id="themeToggleBtn" title="Сменить тему (Светлая/Темная)">
+          <span id="themeIcon">🌙</span>
+        </button>
+        <button class="btn btn-outline" id="quickExportBtn" title="Экспорт данных (Ctrl+S)">
+          <span>💾</span> Экспорт
+        </button>
+        <button class="btn btn-outline" id="helpModalBtn" title="Горячие клавиши и помощь">
+          <span>❓</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+
+    <!-- TAB 1: ИМПОРТ ДАННЫХ -->
+    <section class="tab-content active" id="tab-import">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">📥 Импорт игровых данных</h2>
+            <p class="card-subtitle">Загрузите CSV или JSON таблицу с параметрами юнитов, экипировки или предметов</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-outline" id="loadPresetUnitsBtn">Загрузить: Юниты (RPG)</button>
+            <button class="btn btn-outline" id="loadPresetWeaponsBtn">Загрузить: Оружие</button>
+          </div>
+        </div>
+
+        <!-- Drag & Drop Zone -->
+        <div class="dropzone" id="fileDropzone">
+          <div class="dropzone-icon">📁</div>
+          <div class="dropzone-title">Перетащите CSV или JSON файл сюда</div>
+          <div class="dropzone-desc">или нажмите для выбора файла на диске (.csv, .json)</div>
+          <input type="file" id="fileInput" accept=".csv,.json" style="display: none;">
+        </div>
+
+        <!-- Validation Results Panel -->
+        <div id="validationOutput" style="margin-top: 1.5rem;">
+          <div class="alert alert-info">
+            <span>ℹ️</span>
+            <div>
+              <strong>Ожидаемый формат колонок для юнитов:</strong><br>
+              <code>id</code>, <code>name</code>, <code>hp</code>, <code>attack</code>, <code>defense</code> (опционально: <code>attack_speed</code>, <code>cost</code>).<br>
+              Система автоматически проверяет типы данных, числовые значения и отсутствие дубликатов ID.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Export & Format Guide Card -->
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="card-title">💾 Экспорт текущих данных</h3>
+          <p class="card-subtitle" style="margin-bottom: 1rem;">Выгрузка активной таблицы юнитов в игровой формат без потерь</p>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-primary" id="exportCsvBtn">Скачать CSV</button>
+            <button class="btn btn-outline" id="exportJsonBtn">Скачать JSON</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">🔄 Хранилище сессии</h3>
+          <p class="card-subtitle" style="margin-bottom: 1rem;">Все изменения автоматически сохраняются в localStorage браузера</p>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-danger" id="resetStorageBtn">Сбросить данные к дефолтным</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: РЕДАКТОР ТАБЛИЦЫ -->
+    <section class="tab-content" id="tab-table">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">📋 База данных юнитов и предметов</h2>
+            <p class="card-subtitle">Редактируйте параметры прямо в ячейках таблицы. Изменения сохраняются на лету</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <input type="text" class="form-control" id="tableSearchInput" placeholder="Поиск по имени или ID..." style="max-width: 220px;">
+            <button class="btn btn-success" id="addRowBtn">+ Добавить юнита</button>
+          </div>
+        </div>
+
+        <!-- Table View -->
+        <div class="table-container">
+          <table class="data-table" id="unitsDataTable">
+            <thead>
+              <tr>
+                <th style="width: 70px;">ID</th>
+                <th>Имя</th>
+                <th>Здоровье (HP)</th>
+                <th>Атака (ATK)</th>
+                <th>Защита (DEF)</th>
+                <th>Скор. атаки (APS)</th>
+                <th>Стоимость</th>
+                <th style="width: 80px; text-align: center;">Действия</th>
+              </tr>
+            </thead>
+            <tbody id="unitsTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+          <span id="tableRowsCount">Строк: 0</span>
+          <span>💡 Кликните на ячейку для редактирования значения</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: КАЛЬКУЛЯТОР УРОНА И TTK -->
+    <section class="tab-content" id="tab-ttk">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">🎯 Симулятор дуэли и калькулятор TTK</h2>
+            <p class="card-subtitle">Расчёт урона за удар, DPS и времени до убийства цели (Time To Kill)</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <label class="form-label" style="margin: 0;">Модель брони:</label>
+            <select class="form-control" id="ttkFormulaSelect" style="max-width: 260px;">
+              <option value="flat">Линейная: Max(1, Atk - Def)</option>
+              <option value="dr">Снижение: Atk × 100/(100 + Def)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Arena Fighter Selection -->
+        <div class="combatant-picker">
+          <div class="fighter-card">
+            <div class="fighter-avatar">⚔️</div>
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Атакующий</h3>
+            <select class="form-control" id="attackerSelect"></select>
+            <div id="attackerStats" style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);"></div>
+          </div>
+
+          <div class="vs-badge">VS</div>
+
+          <div class="fighter-card">
+            <div class="fighter-avatar">🛡️</div>
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Цель (Защитник)</h3>
+            <select class="form-control" id="defenderSelect"></select>
+            <div id="defenderStats" style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);"></div>
+          </div>
+        </div>
+
+        <!-- Combat Modifiers -->
+        <div class="grid-4" style="margin-bottom: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Шанс крита (%)</label>
+            <input type="number" class="form-control" id="critChanceInput" value="15" min="0" max="100" step="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Множитель крита (х)</label>
+            <input type="number" class="form-control" id="critMultInput" value="1.5" min="1" max="5" step="0.1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Стихийный бонус (х)</label>
+            <input type="number" class="form-control" id="elemMultInput" value="1.0" min="0.1" max="3" step="0.1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Тип первого удара</label>
+            <select class="form-control" id="firstHitTimingSelect">
+              <option value="zero">Мгновенный (t = 0.0с)</option>
+              <option value="interval">С задержкой интервала (t = 1/APS)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Battle Metrics Summary -->
+        <div class="grid-4" style="margin-bottom: 1.5rem;">
+          <div class="stat-box">
+            <span class="stat-label">Чистый урон за удар</span>
+            <span class="stat-number" id="resHitDamage" style="color: var(--accent-blue);">0</span>
+            <span class="stat-sub" id="resCritDamage">Крит: 0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Ударов для победы</span>
+            <span class="stat-number" id="resHitsToKill" style="color: var(--accent-purple);">0</span>
+            <span class="stat-sub">Количество атак</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Time to Kill (TTK)</span>
+            <span class="stat-number" id="resTtkSeconds" style="color: var(--accent-rose);">0.00 с</span>
+            <span class="stat-sub" id="resDpsSub">DPS: 0</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Эффективное HP цели</span>
+            <span class="stat-number" id="resEhp" style="color: var(--accent-emerald);">0</span>
+            <span class="stat-sub">С учётом брони</span>
+          </div>
+        </div>
+
+        <!-- Visual Combat Simulation Log -->
+        <h3 class="card-title" style="margin-bottom: 0.75rem;">📜 Пошаговый лог дуэли</h3>
+        <div class="combat-log" id="combatLogList">
+          <div class="combat-round">Выберите бойцов для симуляции...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: КРИВАЯ ПРОГРЕССИИ -->
+    <section class="tab-content" id="tab-progression">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">📈 Настройка кривой прогрессии уровней</h2>
+            <p class="card-subtitle">Моделируйте требуемый опыт для уровней, темп прокачки и суммарный XP</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-outline" id="exportProgressionCsvBtn">Экспорт уровней в CSV</button>
+          </div>
+        </div>
+
+        <!-- Progression Formula Controls -->
+        <div class="grid-3" style="margin-bottom: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Тип формулы</label>
+            <select class="form-control" id="progCurveType">
+              <option value="poly">Степенная / Квадратичная: Base × Level^Exponent</option>
+              <option value="linear">Линейная: Base × Level</option>
+              <option value="exp">Экспоненциальная: Base × (Growth)^(Level - 1)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Базовый опыт (Base XP): <span id="valBaseXp" class="slider-value">100</span></label>
+            <div class="slider-group">
+              <input type="range" id="sliderBaseXp" min="10" max="1000" step="10" value="100">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Коэффициент роста (Exponent / Factor): <span id="valGrowth" class="slider-value">1.8</span></label>
+            <div class="slider-group">
+              <input type="range" id="sliderGrowth" min="1.0" max="3.0" step="0.05" value="1.8">
+            </div>
+          </div>
+        </div>
+
+        <!-- Slider for Max Level -->
+        <div class="form-group" style="max-width: 400px; margin-bottom: 1.5rem;">
+          <label class="form-label">Максимальный уровень: <span id="valMaxLevel" class="slider-value">30</span></label>
+          <div class="slider-group">
+            <input type="range" id="sliderMaxLevel" min="5" max="60" step="1" value="30">
+          </div>
+        </div>
+
+        <!-- Chart Container -->
+        <div style="height: 380px; position: relative; margin-bottom: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); padding: 1rem; border: 1px solid var(--border-color);">
+          <canvas id="progressionChart"></canvas>
+        </div>
+
+        <!-- Level Table Preview -->
+        <h3 class="card-title" style="margin-bottom: 0.75rem;">Таблица опыта по уровням</h3>
+        <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+          <table class="data-table" id="progressionTable">
+            <thead>
+              <tr>
+                <th>Уровень</th>
+                <th>Опыт на уровень (Δ XP)</th>
+                <th>Суммарный опыт (Total XP)</th>
+                <th>Примерное время игры (мин)*</th>
+              </tr>
+            </thead>
+            <tbody id="progressionTableBody"></tbody>
+          </table>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem;">* Оценка при темпе 100 XP / минуту.</p>
+      </div>
+    </section>
+
+    <!-- TAB 5: ПРОВЕРКА ЛУТ-ТАБЛИЦ -->
+    <section class="tab-content" id="tab-loot">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">🎲 Валидатор и симулятор таблиц лута</h2>
+            <p class="card-subtitle">Проверка корректности вероятностей дропа (сумма 100%), поиск ошибок и Монте-Карло тест</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-outline" id="loadPresetLootBtn">Загрузить демо лута</button>
+            <button class="btn btn-success" id="normalizeLootBtn">⚖️ Нормализовать к 100%</button>
+            <button class="btn btn-primary" id="exportLootCsvBtn">Скачать CSV лута</button>
+          </div>
+        </div>
+
+        <!-- Sum Probability Status Indicator -->
+        <div id="lootSumStatus" class="alert alert-success" style="margin-bottom: 1.5rem;">
+          <span id="lootSumIcon">✅</span>
+          <div id="lootSumText">
+            <strong>Сумма шансов: 100.00%</strong> — Таблица лута валидна и готова к экспорту.
+          </div>
+        </div>
+
+        <!-- Loot Table Editor -->
+        <div class="table-container" style="margin-bottom: 1.5rem;">
+          <table class="data-table" id="lootDataTable">
+            <thead>
+              <tr>
+                <th style="width: 60px;">ID</th>
+                <th>Название предмета</th>
+                <th style="width: 140px;">Вероятность (%)</th>
+                <th>Редкость</th>
+                <th style="width: 100px;">Мин. кол-во</th>
+                <th style="width: 100px;">Макс. кол-во</th>
+                <th style="width: 70px; text-align: center;">Удалить</th>
+              </tr>
+            </thead>
+            <tbody id="lootTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <button class="btn btn-outline" id="addLootRowBtn">+ Добавить предмет лута</button>
+          <span style="font-size: 0.85rem; color: var(--text-muted);" id="lootRowCount">Предметов: 0</span>
+        </div>
+
+        <!-- Monte Carlo Simulator Section -->
+        <div class="card" style="background: var(--bg-primary); border-color: var(--border-accent);">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">🎰 Симулятор Монте-Карло (Тест генератора случайных чисел)</h3>
+              <p class="card-subtitle">Проверьте теоретическую вероятность против эмпирической симуляции бросков</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <select class="form-control" id="simRollCount" style="max-width: 160px;">
+                <option value="100">100 бросков</option>
+                <option value="1000" selected>1 000 бросков</option>
+                <option value="10000">10 000 бросков</option>
+              </select>
+              <button class="btn btn-primary" id="runSimulationBtn">Запустить симуляцию</button>
+            </div>
+          </div>
+
+          <div id="simulationResults" style="display: none;">
+            <div class="table-container" style="max-height: 250px; overflow-y: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Предмет</th>
+                    <th>Теория (%)</th>
+                    <th>Выпало (раз)</th>
+                    <th>Факт (%)</th>
+                    <th>Дельта (Δ)</th>
+                  </tr>
+                </thead>
+                <tbody id="simulationTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: АУДИТ БАЛАНСА (ДОП. БАЛЛЫ) -->
+    <section class="tab-content" id="tab-audit">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">⚖️ Аудит баланса юнитов (Эвристика эффективности)</h2>
+            <p class="card-subtitle">Автоматический поиск доминирующих (OP) и неэффективных (Trash) юнитов на основе боевой ценности</p>
+          </div>
+          <div>
+            <span class="badge badge-op" style="margin-right: 0.5rem;">OP: Эффективность > 125%</span>
+            <span class="badge badge-balanced" style="margin-right: 0.5rem;">Баланс: 80% — 125%</span>
+            <span class="badge badge-trash">Trash: Эффективность < 80%</span>
+          </div>
+        </div>
+
+        <div class="alert alert-info">
+          <span>📐</span>
+          <div>
+            <strong>Формула аудита:</strong><br>
+            <code>DPS = Attack × AttackSpeed</code> | <code>EHP = HP × (1 + Defense / 50)</code><br>
+            <code>Combat Power = sqrt(DPS × EHP)</code> | <code>Efficiency = (Combat Power / Cost) / AvgRatio × 100%</code>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table" id="auditDataTable">
+            <thead>
+              <tr>
+                <th>Имя</th>
+                <th>Стоимость</th>
+                <th>DPS</th>
+                <th>Эффективное HP</th>
+                <th>Боевая мощь (CP)</th>
+                <th>CP / Золото</th>
+                <th>Оценка баланса</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Help & Shortcuts Modal -->
+  <div class="modal-overlay" id="helpModal">
+    <div class="modal-content">
+      <div class="card-header">
+        <h3 class="card-title">⌨️ Горячие клавиши и справка</h3>
+        <button class="btn btn-outline btn-icon" id="closeHelpModal">✕</button>
+      </div>
+      <div style="font-size: 0.9rem; line-height: 1.8;">
+        <p><strong>Быстрый переход по вкладкам:</strong></p>
+        <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+          <li><code>1</code> — Импорт данных</li>
+          <li><code>2</code> — Редактор таблицы</li>
+          <li><code>3</code> — Калькулятор TTK</li>
+          <li><code>4</code> — Кривая прогрессии</li>
+          <li><code>5</code> — Таблицы лута</li>
+          <li><code>6</code> — Аудит баланса</li>
+        </ul>
+        <p><strong>Действия:</strong></p>
+        <ul style="margin-left: 1.5rem;">
+          <li><code>Ctrl + S</code> / <code>Cmd + S</code> — Экспорт активных данных в CSV</li>
+          <li><code>Escape</code> — Закрыть модальное окно</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Balance & Progression Studio • Практический кейс по геймдизайну и разработке • Работает оффлайн и на GitHub Pages</p>
+  </footer>
+
+  <!-- Modular Scripts -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
